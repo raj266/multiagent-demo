@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Prompt Chaining – Hospitality Advisor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9edf2 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            color: #1e3c72;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header p {
+            color: #4a627a;
+            margin-top: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .card-content {
+            padding: 2rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-weight: 600;
+            color: #1e3c72;
+            font-size: 0.9rem;
+        }
+
+        input, select, textarea {
+            padding: 0.75rem;
+            border: 1px solid #d0dae8;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: border 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 0.25rem;
+        }
+
+        .checkbox-group label {
+            font-weight: normal;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            cursor: pointer;
+        }
+
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.9rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        .result-area {
+            margin-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 1.5rem;
+        }
+
+        .final-card {
+            background: #f0f9ff;
+            border-left: 5px solid #3b82f6;
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .step-card {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eef2f6;
+        }
+
+        .step-header {
+            font-weight: 700;
+            color: #3b82f6;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .meta-info {
+            font-size: 0.85rem;
+            color: #5b6e8c;
+            text-align: right;
+            margin-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 1rem;
+        }
+
+        .error {
+            background: #fee2e2;
+            border-left-color: #ef4444;
+            color: #b91c1c;
+        }
+
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e2e8f0;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: #6c7a91;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>⛓️ Prompt Chaining <span style="font-size: 1.8rem;">+</span> 🏨 Hospitality</h1>
+        <p>Extract → Recommend → Polish — powered by Groq</p>
+    </div>
+
+    <div class="card">
+        <div class="card-content">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>📍 Destination</label>
+                    <input type="text" id="destination" placeholder="e.g., Goa, Udaipur, Kerala" value="Goa">
+                </div>
+                <div class="form-group">
+                    <label>💰 Budget per night (INR)</label>
+                    <input type="number" id="budget" placeholder="e.g., 8000" value="8000" step="500">
+                </div>
+                <div class="form-group">
+                    <label>🛏️ Room type (optional)</label>
+                    <select id="roomType">
+                        <option value="">Any</option>
+                        <option value="deluxe">Deluxe</option>
+                        <option value="suite">Suite</option>
+                        <option value="standard">Standard</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>✨ Amenities (optional)</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" value="beachfront"> Beachfront</label>
+                    <label><input type="checkbox" value="pool"> Pool</label>
+                    <label><input type="checkbox" value="gym"> Gym</label>
+                    <label><input type="checkbox" value="breakfast"> Breakfast included</label>
+                    <label><input type="checkbox" value="spa"> Spa</label>
+                    <label><input type="checkbox" value="wifi"> Free Wi‑Fi</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>📝 Special requests (optional)</label>
+                <textarea id="specialRequests" rows="2" placeholder="e.g., romantic view, near beach"></textarea>
+            </div>
+
+            <button id="runBtn">✨ Run Chain</button>
+
+            <div id="resultContainer" class="result-area"></div>
+        </div>
+    </div>
+    <footer>Agentic AI • Prompt Chaining (Hospitality) • Backend on Render</footer>
+</div>
+
+<script>
+    const API_URL = "https://ai-prompt-chaining.onrender.com/chain";
+
+    const runBtn = document.getElementById('runBtn');
+    const resultContainer = document.getElementById('resultContainer');
+
+    function buildQuery() {
+        const destination = document.getElementById('destination').value.trim();
+        const budget = document.getElementById('budget').value;
+        const roomType = document.getElementById('roomType').value;
+        const amenities = Array.from(document.querySelectorAll('.checkbox-group input:checked')).map(cb => cb.value);
+        const special = document.getElementById('specialRequests').value.trim();
+
+        let query = `I want a hotel in ${destination}`;
+        if (budget) query += ` with budget around ${budget} INR per night`;
+        if (roomType) query += `, ${roomType} room`;
+        if (amenities.length) query += `, amenities: ${amenities.join(', ')}`;
+        if (special) query += `. Special requests: ${special}`;
+        return query;
+    }
+
+    runBtn.addEventListener('click', async () => {
+        const query = buildQuery();
+        if (!query) {
+            resultContainer.innerHTML = `<div class="final-card error"><strong>⚠️ Missing destination</strong><br>Please enter at least a destination.</div>`;
+            return;
+        }
+
+        resultContainer.innerHTML = `
+            <div class="final-card" style="text-align: center;">
+                <div class="loader" style="margin-bottom: 0.5rem;"></div>
+                <strong>Processing chain...</strong><br>
+                <span style="font-size: 0.9rem;">Extracting → Recommending → Polishing</span>
+            </div>
+        `;
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Server error (${response.status}): ${errorText.slice(0, 100)}`);
+            }
+
+            const data = await response.json();
+
+            let html = `
+                <div class="final-card">
+                    <strong>✅ Final Recommendation</strong>
+                    <div style="margin-top: 0.5rem; line-height: 1.5;">${escapeHtml(data.final_answer)}</div>
+                </div>
+                <div style="margin-bottom: 0.75rem; font-weight: 600;">📋 Steps (${data.elapsed_time.toFixed(2)} seconds)</div>
+            `;
+
+            if (data.steps && Array.isArray(data.steps)) {
+                data.steps.forEach(step => {
+                    let stepIcon = step.step === 'extract' ? '🔍' : (step.step === 'recommend' ? '💡' : '✨');
+                    html += `
+                        <div class="step-card">
+                            <div class="step-header">${stepIcon} ${step.step.toUpperCase()}</div>
+                            <div>${escapeHtml(step.output)}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            html += `<div class="meta-info">⏱️ Total time: ${data.elapsed_time.toFixed(2)} seconds</div>`;
+            resultContainer.innerHTML = html;
+
+        } catch (error) {
+            resultContainer.innerHTML = `<div class="final-card error"><strong>❌ Error</strong><br>${escapeHtml(error.message)}</div>`;
+        }
+    });
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+</script>
+</body>
+</html>
